@@ -1,9 +1,3 @@
-output "db_config" {
-  value = {
-    user     = aws_db_instance.database.username
-    password = random_password.password.result
-    database = aws_db_instance.database.db_name
-    hostname = aws_db_instance.database.address
-    port     = aws_db_instance.database.port
-  }
+output "lb_dns_name" {
+ value = module.alb.this_lb_dns_name
 }
