@@ -1,0 +1,11 @@
+# 1. Init — tải providers/modules, bắt buộc trước validate
+terraform init
+
+# 2. Format check — kiểm tra format nhưng KHÔNG sửa (báo file lệch chuẩn)
+terraform fmt -check -recursive
+
+# 3. Validate — kiểm tra cú pháp & tính hợp lệ của config
+terraform validate
+
+# 4. Plan
+terraform plan

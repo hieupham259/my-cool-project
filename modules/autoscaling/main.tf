@@ -1,6 +1,34 @@
-module "iam_instance_profile" {
-  source  = "terraform-in-action/iip/aws"
-  actions = ["logs:*", "rds:*"]
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "instance" {
+  name_prefix        = "${var.namespace}-instance"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+data "aws_iam_policy_document" "instance" {
+  statement {
+    actions   = ["logs:*", "rds:*"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "instance" {
+  name_prefix = "${var.namespace}-instance"
+  role        = aws_iam_role.instance.id
+  policy      = data.aws_iam_policy_document.instance.json
+}
+
+resource "aws_iam_instance_profile" "instance" {
+  name_prefix = "${var.namespace}-instance"
+  role        = aws_iam_role.instance.name
 }
 
 data "cloudinit_config" "config" {
@@ -30,7 +58,7 @@ resource "aws_launch_template" "webserver" {
   key_name      = var.ssh_keypair
 
   iam_instance_profile {
-    name = module.iam_instance_profile.name
+    name = aws_iam_instance_profile.instance.name
   }
 
   vpc_security_group_ids = [var.sg.websvr]
@@ -47,30 +75,35 @@ resource "aws_autoscaling_group" "webserver" {
   }
 
   vpc_zone_identifier = var.vpc.private_subnets
-  target_group_arns   = module.alb.target_group_arns
+  target_group_arns   = [aws_lb_target_group.webserver.arn]
 }
 
-module "alb" {
-  source             = "terraform-aws-modules/alb/aws"
-  version            = "~> 5.0"
+resource "aws_lb" "this" {
   name               = var.namespace
   load_balancer_type = "application"
-  vpc_id             = var.vpc.vpc_id
   subnets            = var.vpc.public_subnets
   security_groups    = [var.sg.lb]
+}
 
-  http_tcp_listeners = [{
-    port               = 80
-    protocol           = "HTTP"
-    target_group_index = 0
-  }]
+resource "aws_lb_target_group" "webserver" {
+  name_prefix = "websvr"
+  port        = 8080
+  protocol    = "HTTP"
+  vpc_id      = var.vpc.vpc_id
+  target_type = "instance"
 
-  target_groups = [
-    {
-      name_prefix      = "${var.namespace}-webserver-tg"
-      port             = 8080
-      protocol         = "HTTP"
-      target_type      = "instance"
-    }
-  ]
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.webserver.arn
+  }
 }

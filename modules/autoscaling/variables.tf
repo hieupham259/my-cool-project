@@ -16,7 +16,7 @@ variable "sg" {
 
 variable "db_config" {
   type = object({
-    user = string
+    user     = string
     password = string
     database = string
     hostname = string

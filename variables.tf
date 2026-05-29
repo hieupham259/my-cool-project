@@ -6,7 +6,7 @@ variable "namespace" {
 
 variable "ssh_keypair" {
   description = "SSH keypair to use for EC2 instance"
-  default     = null   # Null rất hữu ích cho các biến tùy chọn không có giá trị mặc định cụ thể.
+  default     = null # Null rất hữu ích cho các biến tùy chọn không có giá trị mặc định cụ thể.
   type        = string
 }
 
