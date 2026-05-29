@@ -1,0 +1,46 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files (chứa toàn bộ trạng thái infra + có thể chứa secrets)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Variable files có thể chứa secrets / config cá nhân
+*.tfvars
+*.tfvars.json
+!example.tfvars
+!*.example.tfvars
+
+# Override files (thường dùng cho config local của developer)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Lock file của plan output
+*.tfplan
+*.tfplan.*
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# AWS credentials (phòng trường hợp lưu nhầm vào project)
+.aws/
+credentials
+*.pem
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
