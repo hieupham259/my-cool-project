@@ -22,9 +22,13 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
-# Lock file của plan output
+# Plan output files (nhị phân + JSON) — chứa secrets plaintext, KHÔNG bao giờ commit
 *.tfplan
 *.tfplan.*
+tfplan
+tfplan.*
+plan.out
+*.plan
 
 # CLI configuration files
 .terraformrc

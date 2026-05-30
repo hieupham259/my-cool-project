@@ -1,14 +1,14 @@
 data "aws_availability_zones" "available" {}
 
 locals {
-  azs              = slice(data.aws_availability_zones.available.names, 0, 3)
-  public_subnets   = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  database_subnets = ["10.0.21.0/24", "10.0.22.0/24", "10.0.23.0/24"]
+  azs              = slice(data.aws_availability_zones.available.names, 0, 2)
+  public_subnets   = ["172.16.101.0/24", "172.16.102.0/24"]
+  private_subnets  = ["172.16.1.0/24", "172.16.2.0/24"]
+  database_subnets = ["172.16.21.0/24", "172.16.22.0/24"]
 }
 
 resource "aws_vpc" "this" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = "172.16.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
 
@@ -141,63 +141,64 @@ resource "aws_route_table_association" "database" {
 resource "aws_security_group" "lb_sg" {
   name   = "${var.namespace}-lb-sg"
   vpc_id = aws_vpc.this.id
+}
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_ingress_rule" "lb_http" {
+  security_group_id = aws_security_group.lb_sg.id
+  from_port         = 80
+  to_port           = 80
+  ip_protocol       = "tcp"
+  cidr_ipv4         = "0.0.0.0/0"
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_egress_rule" "lb_all" {
+  security_group_id = aws_security_group.lb_sg.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_security_group" "websvr_sg" {
   name   = "${var.namespace}-websvr-sg"
   vpc_id = aws_vpc.this.id
+}
 
-  ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lb_sg.id]
-  }
+resource "aws_vpc_security_group_ingress_rule" "websvr_app" {
+  security_group_id            = aws_security_group.websvr_sg.id
+  from_port                    = 8080
+  to_port                      = 8080
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.lb_sg.id
+}
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
+resource "aws_vpc_security_group_ingress_rule" "websvr_ssh" {
+  security_group_id = aws_security_group.websvr_sg.id
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+  cidr_ipv4         = aws_vpc.this.cidr_block
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_egress_rule" "websvr_all" {
+  security_group_id = aws_security_group.websvr_sg.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_security_group" "db_sg" {
   name   = "${var.namespace}-db-sg"
   vpc_id = aws_vpc.this.id
+}
 
-  ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    security_groups = [aws_security_group.websvr_sg.id]
-  }
+resource "aws_vpc_security_group_ingress_rule" "db_mysql" {
+  security_group_id            = aws_security_group.db_sg.id
+  from_port                    = 3306
+  to_port                      = 3306
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.websvr_sg.id
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_egress_rule" "db_all" {
+  security_group_id = aws_security_group.db_sg.id
+  ip_protocol       = "-1"
+  cidr_ipv4         = "0.0.0.0/0"
 }
