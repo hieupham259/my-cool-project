@@ -1,21 +1,23 @@
-# module "autoscaling" {
-#   source      = "./modules/autoscaling"
-#   namespace   = var.namespace
-#   ssh_keypair = var.ssh_keypair
+module "autoscaling" {
+  source      = "./modules/autoscaling"
+  namespace   = var.namespace
+  ssh_keypair = var.ssh_keypair
 
-#   # input argument for the autoscaling module, set by other module
-#   vpc       = module.networking.vpc
-#   sg        = module.networking.sg
-#   db_config = module.database.db_config
-# }
+  # input argument for the autoscaling module, set by other module
+  vpc       = module.networking.vpc
+  sg        = module.networking.sg
+  db_config = module.database.db_config
 
-# module "database" {
-#   source    = "./modules/database"
-#   namespace = var.namespace
+  create_autoscaling_service_linked_role = var.create_autoscaling_service_linked_role
+}
 
-#   vpc = module.networking.vpc
-#   sg  = module.networking.sg
-# }
+module "database" {
+  source    = "./modules/database"
+  namespace = var.namespace
+
+  vpc = module.networking.vpc
+  sg  = module.networking.sg
+}
 
 module "networking" {
   source    = "./modules/networking"

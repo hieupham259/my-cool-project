@@ -15,3 +15,9 @@ variable "region" {
   default     = "us-east-1"
   type        = string
 }
+
+variable "create_autoscaling_service_linked_role" {
+  description = "Đặt true trên account AWS mới chưa có AWSServiceRoleForAutoScaling (tránh race khi AWS tự sinh SLR). Để false (mặc định) nếu role đã tồn tại để plan/apply bình thường."
+  type        = bool
+  default     = false
+}

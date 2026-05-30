@@ -8,4 +8,9 @@ terraform fmt -check -recursive
 terraform validate
 
 # 4. Plan
-terraform plan
+terraform plan -out=tfplan
+
+terraform show -json tfplan > tfplan.json
+
+# 5. Apply
+terraform apply tfplan

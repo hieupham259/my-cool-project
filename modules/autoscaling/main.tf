@@ -64,6 +64,15 @@ resource "aws_launch_template" "webserver" {
   vpc_security_group_ids = [var.sg.websvr]
 }
 
+# Service-linked role that Auto Scaling uses to validate the ELB configuration.
+# It is an account-global/singleton resource: create it before the ASG (via depends_on)
+# to avoid the "Access denied when attempting to assume role" race when AWS auto-creates the SLR.
+# Enable on a NEW account (role does not exist yet); leave false if the role already exists (avoids the "already exists" error).
+resource "aws_iam_service_linked_role" "autoscaling" {
+  count            = var.create_autoscaling_service_linked_role ? 1 : 0
+  aws_service_name = "autoscaling.amazonaws.com"
+}
+
 resource "aws_autoscaling_group" "webserver" {
   name_prefix = "${var.namespace}-webserver-asg"
   max_size    = 2
@@ -76,6 +85,9 @@ resource "aws_autoscaling_group" "webserver" {
 
   vpc_zone_identifier = var.vpc.private_subnets
   target_group_arns   = [aws_lb_target_group.webserver.arn]
+
+  # Đảm bảo SLR (nếu được quản) tồn tại & propagate trước khi ASG validate ELB.
+  depends_on = [aws_iam_service_linked_role.autoscaling]
 }
 
 resource "aws_lb" "this" {
